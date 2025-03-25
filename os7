@@ -151,80 +151,62 @@ printf("\nThe system is not in a safe state.\n");
 
 #include <stdio.h>
 #include <stdlib.h>
-void sortRequests(int *requests, int size);
-void scan(int *requests, int size, int headPosition, int totalBlocks, int direction);
-int main() {
-int totalBlocks, headPosition, direction, requestSize;
-printf("Enter the total number of disk blocks: ");
-scanf("%d", &totalBlocks);
-printf("Enter the disk request string size: ");
-scanf("%d", &requestSize);
-int *requests = (int *)malloc(requestSize * sizeof(int));
-printf("Enter the disk request string: ");
-for (int i = 0; i < requestSize; i++) {
-scanf("%d", &requests[i]);
-}
-printf("Enter the starting head position: ");
-scanf("%d", &headPosition);
-printf("Enter the direction (0 for Left, 1 for Right): ");
-scanf("%d", &direction);
-sortRequests(requests, requestSize);
-scan(requests, requestSize, headPosition, totalBlocks, direction);
-free(requests);
-return 0;
-}
-void sortRequests(int *requests, int size) {
-for (int i = 0; i < size - 1; i++) {
-for (int j = 0; j < size - i - 1; j++) {
-if (requests[j] > requests[j + 1]) {
-int temp = requests[j];
-requests[j] = requests[j + 1];
-requests[j + 1] = temp;
+void sortRequests(int requests[], int n) {
+int temp;
+for (int i = 0; i < n - 1; i++) {
+for (int j = i + 1; j < n; j++) {
+if (requests[i] > requests[j]) {
+temp = requests[i];
+requests[i] = requests[j];
+requests[j] = temp;
 }
 }
 }
 }
-void scan(int *requests, int size, int headPosition, int totalBlocks, int direction) {
-int headMovements = 0;
-printf("Serving requests:\n");
-if (direction == 0) {
-for (int i = headPosition; i >= 0; i--) {
-for (int j = 0; j < size; j++) {
-if (requests[j] == i) {
-printf("%d ", requests[j]);
-headMovements += abs(headPosition - requests[j]);
-headPosition = requests[j];
-}
-}
-}
-for (int i = 0; i <= totalBlocks; i++) {
-for (int j = 0; j < size; j++) {
-if (requests[j] == i) {
-printf("%d ", requests[j]);
-headMovements += abs(headPosition - requests[j]);
-headPosition = requests[j];
-}
-}
-}
+void scan(int requests[], int n, int head, int diskSize, char direction) {
+int totalHeadMovements = 0;
+int left[100], right[100];
+int leftCount = 0, rightCount = 0;
+for (int i = 0; i < n; i++) {
+if (requests[i] < head) {
+left[leftCount++] = requests[i];
 } else {
-for (int i = headPosition; i <= totalBlocks; i++) {
-for (int j = 0; j < size; j++) {
-if (requests[j] == i) {
-printf("%d ", requests[j]);
-headMovements += abs(headPosition - requests[j]);
-headPosition = requests[j];
+right[rightCount++] = requests[i];
 }
 }
+sortRequests(left, leftCount);
+sortRequests(right, rightCount);
+if (direction == 'R') {
+totalHeadMovements += (diskSize - 1 - head);
+for (int i = 0; i < rightCount; i++) {
+totalHeadMovements += abs(head - right[i]);
+head = right[i];
 }
-for (int i = totalBlocks; i >= 0; i--) {
-for (int j = 0; j < size; j++) {
-if (requests[j] == i) {
-printf("%d ", requests[j]);
-headMovements += abs(headPosition - requests[j]);
-headPosition = requests[j];
+totalHeadMovements += (head - 0);
+head = 0;
+for (int i = leftCount - 1; i >= 0; i--) {
+totalHeadMovements += abs(head - left[i]);
+head = left[i];
 }
 }
+printf("Requests in the order they are served:\n");
+for (int i = 0; i < rightCount; i++) {
+printf("%d ", right[i]);
 }
+for (int i = leftCount - 1; i >= 0; i--) {
+printf("%d ", left[i]);
 }
-printf("\nTotal number of head movements: %d\n", headMovements);
+printf("\nTotal head movements: %d\n", totalHeadMovements);
+}
+int main() {
+int requests[] = {82, 170, 43, 140, 24, 16, 190};
+int n = sizeof(requests) / sizeof(requests[0]);
+int head, diskSize = 200;
+char direction;
+printf("Enter the starting head position: ");
+scanf("%d", &head);
+printf("Enter the direction (R for Right, L for Left): ");
+scanf(" %c", &direction);
+scan(requests, n, head, diskSize, direction);
+return 0;
 }
