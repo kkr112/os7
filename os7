@@ -1,0 +1,230 @@
+#include <stdio.h>
+#include <stdbool.h>
+#define NUM_PROCESSES 5
+#define NUM_RESOURCES 4
+int available[NUM_RESOURCES] = {3, 3, 2, 1};
+int max[NUM_PROCESSES][NUM_RESOURCES] = {
+{4, 2, 1, 2},
+{5, 2, 5, 2},
+{2, 3, 1, 6},
+{1, 4, 2, 4},
+{3, 6, 6, 5}
+};
+int allocation[NUM_PROCESSES][NUM_RESOURCES] = {
+{2, 0, 0, 1},
+{3, 1, 2, 1},
+{2, 1, 0, 3},
+{1, 3, 1, 2},
+{1, 4, 3, 2}
+};
+int need[NUM_PROCESSES][NUM_RESOURCES];
+void calculateNeed();
+bool isSafeState(int process, int request[]);
+void displayNeedMatrix();
+void displaySafeSequence();
+bool requestResource(int process, int request[]);
+int main() {
+int choice;
+bool needCalculated = false;
+bool safeStateChecked = false;
+do {
+printf("\nBanker's Algorithm Menu:\n");
+printf("1. Calculate and display Need Matrix\n");
+printf("2. Check if the system is in a safe state and display safe sequence\n");
+printf("3. Exit\n");
+printf("Enter your choice: ");
+scanf("%d", &choice);
+switch (choice) {
+case 1:
+calculateNeed();
+displayNeedMatrix();
+needCalculated = true;
+break;
+case 2:
+if (!needCalculated) {
+printf("Please calculate the Need Matrix first (Option 1).\n");
+break;
+}
+if (!safeStateChecked) {
+displaySafeSequence();
+safeStateChecked = true;
+}
+break;
+case 3:
+printf("Exiting...\n");
+break;
+default:
+printf("Invalid choice. Please try again.\n");
+}
+} while (choice != 3);
+return 0;
+}
+void calculateNeed() {
+for (int i = 0; i < NUM_PROCESSES; i++) {
+for (int j = 0; j < NUM_RESOURCES; j++) {
+need[i][j] = max[i][j] - allocation[i][j];
+}
+}
+}
+bool isSafeState(int process, int request[]) {
+for (int i = 0; i < NUM_RESOURCES; i++) {
+if (request[i] > need[process][i]) {
+return false;
+}
+}
+for (int i = 0; i < NUM_RESOURCES; i++) {
+if (request[i] > available[i]) {
+return false;
+}
+}
+for (int i = 0; i < NUM_RESOURCES; i++) {
+available[i] -= request[i];
+allocation[process][i] += request[i];
+need[process][i] -= request[i];
+}
+int work[NUM_RESOURCES];
+bool finish[NUM_PROCESSES];
+for (int i = 0; i < NUM_RESOURCES; i++) {
+work[i] = available[i];
+}
+for (int i = 0; i < NUM_PROCESSES; i++) {
+finish[i] = false;
+}
+int count = 0;
+while (count < NUM_PROCESSES) {
+bool found = false;
+for (int i = 0; i < NUM_PROCESSES; i++) {
+if (!finish[i]) {
+bool canExecute = true;
+for (int j = 0; j < NUM_RESOURCES; j++) {
+if (need[i][j] > work[j]) {
+canExecute = false;
+break;
+}
+}
+if (canExecute) {
+for (int j = 0; j < NUM_RESOURCES; j++) {
+work[j] += allocation[i][j];
+}
+finish[i] = true;
+count++;
+found = true;
+}
+}
+}
+if (!found) {
+for (int i = 0; i < NUM_RESOURCES; i++) {
+available[i] += request[i];
+allocation[process][i] -= request[i];
+need[process][i] += request[i];
+}
+return false;
+}
+}
+return true;
+}
+void displayNeedMatrix() {
+printf("\nNeed Matrix:\n");
+printf(" R1 R2 R3 R4\n");
+for (int i = 0; i < NUM_PROCESSES; i++) {
+printf("P%d ", i + 1);
+for (int j = 0; j < NUM_RESOURCES; j++) {
+printf("%2d ", need[i][j]);
+}
+printf("\n");
+}
+}
+void displaySafeSequence() {
+int safeSequence[NUM_PROCESSES];
+if (isSafeState(0, safeSequence)) {
+printf("\nThe system is in a safe state.\nSafe sequence: ");
+for (int i = 0; i < NUM_PROCESSES; i++) {
+printf("P%d ", safeSequence[i] + 1);
+}
+printf("\n");
+} else {
+printf("\nThe system is not in a safe state.\n");
+}
+}
+
+2
+
+#include <stdio.h>
+#include <stdlib.h>
+void sortRequests(int *requests, int size);
+void scan(int *requests, int size, int headPosition, int totalBlocks, int direction);
+int main() {
+int totalBlocks, headPosition, direction, requestSize;
+printf("Enter the total number of disk blocks: ");
+scanf("%d", &totalBlocks);
+printf("Enter the disk request string size: ");
+scanf("%d", &requestSize);
+int *requests = (int *)malloc(requestSize * sizeof(int));
+printf("Enter the disk request string: ");
+for (int i = 0; i < requestSize; i++) {
+scanf("%d", &requests[i]);
+}
+printf("Enter the starting head position: ");
+scanf("%d", &headPosition);
+printf("Enter the direction (0 for Left, 1 for Right): ");
+scanf("%d", &direction);
+sortRequests(requests, requestSize);
+scan(requests, requestSize, headPosition, totalBlocks, direction);
+free(requests);
+return 0;
+}
+void sortRequests(int *requests, int size) {
+for (int i = 0; i < size - 1; i++) {
+for (int j = 0; j < size - i - 1; j++) {
+if (requests[j] > requests[j + 1]) {
+int temp = requests[j];
+requests[j] = requests[j + 1];
+requests[j + 1] = temp;
+}
+}
+}
+}
+void scan(int *requests, int size, int headPosition, int totalBlocks, int direction) {
+int headMovements = 0;
+printf("Serving requests:\n");
+if (direction == 0) {
+for (int i = headPosition; i >= 0; i--) {
+for (int j = 0; j < size; j++) {
+if (requests[j] == i) {
+printf("%d ", requests[j]);
+headMovements += abs(headPosition - requests[j]);
+headPosition = requests[j];
+}
+}
+}
+for (int i = 0; i <= totalBlocks; i++) {
+for (int j = 0; j < size; j++) {
+if (requests[j] == i) {
+printf("%d ", requests[j]);
+headMovements += abs(headPosition - requests[j]);
+headPosition = requests[j];
+}
+}
+}
+} else {
+for (int i = headPosition; i <= totalBlocks; i++) {
+for (int j = 0; j < size; j++) {
+if (requests[j] == i) {
+printf("%d ", requests[j]);
+headMovements += abs(headPosition - requests[j]);
+headPosition = requests[j];
+}
+}
+}
+for (int i = totalBlocks; i >= 0; i--) {
+for (int j = 0; j < size; j++) {
+if (requests[j] == i) {
+printf("%d ", requests[j]);
+headMovements += abs(headPosition - requests[j]);
+headPosition = requests[j];
+}
+}
+}
+}
+printf("\nTotal number of head movements: %d\n", headMovements);
+}
